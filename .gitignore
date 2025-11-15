@@ -1,0 +1,31 @@
+# ------------------------------
+# Node Automation
+# ------------------------------
+node-automation/node_modules/
+node-automation/.env
+node-automation/handshake_state.json
+node-automation/playwright-report/
+node-automation/test-results/
+node-automation/*.log
+
+# ------------------------------
+# Python Resume Generator
+# ------------------------------
+python-resume/venv/
+python-resume/__pycache__/
+python-resume/.env
+
+# Generated resumes (docx/pdf)
+python-resume/generated/
+
+# ------------------------------
+# OS-specific junk
+# ------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# Editor junk
+# ------------------------------
+.vscode/
+.idea/

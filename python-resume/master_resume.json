@@ -1,0 +1,17 @@
+[
+  {
+    "category": "Backend",
+    "skills": ["Node.js", "Express", "REST", "PostgreSQL"],
+    "bullet": "Built RESTful APIs with Node.js and Express, integrating PostgreSQL for persistent storage and JWT-based authentication."
+  },
+  {
+    "category": "Distributed Systems",
+    "skills": ["Go", "gRPC", "ORAM"],
+    "bullet": "Implemented a Path ORAM client–server model to hide access patterns over untrusted storage, including eviction and position-map management."
+  },
+  {
+    "category": "Full Stack",
+    "skills": ["React", "TypeScript", "Supabase", "Tailwind"],
+    "bullet": "Developed a real-time typing game with React and TypeScript, storing scores in Supabase and rendering leaderboards with Tailwind-styled UI."
+  }
+]

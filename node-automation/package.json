@@ -1,0 +1,12 @@
+{
+  "name": "handshake-auto-open",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node handshake_automation.js"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.49.0",
+    "dotenv": "^16.4.0"
+  }
+}

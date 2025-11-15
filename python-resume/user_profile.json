@@ -1,0 +1,18 @@
+{
+  "name": "Your Name",
+  "email": "your.email@example.com",
+  "phone": "(555) 555-5555",
+  "location": "Santa Cruz, CA",
+  "github": "github.com/yourhandle",
+  "linkedin": "linkedin.com/in/yourhandle",
+  "education": [
+    {
+      "school": "University of California, Santa Cruz",
+      "degree": "B.S. Computer Science",
+      "grad_year": "2026",
+      "details": [
+        "Relevant coursework: Distributed Systems, Operating Systems, Databases"
+      ]
+    }
+  ]
+}

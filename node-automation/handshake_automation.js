@@ -196,16 +196,25 @@ async function main() {
 
   console.log("✨ Logged in — waiting for jobs to load...");
 
-  // Handshake loads jobs via JS; wait for at least one job link
-  await page.waitForSelector('a[href*="/stu/jobs/"]', { timeout: 15000 });
+  // await page.waitForTimeout(3000);
+  // await page.pause();
+
+  // Wait for job cards to appear
+  await page.waitForSelector('a[href*="/job-search/"]', { timeout: 15000 });
 
   console.log("✨ Jobs loaded — scraping...");
 
-  const jobLinks = await page.$$eval('a[href*="/stu/jobs/"]', (anchors) =>
+  const jobLinks = await page.$$eval('a[href*="/job-search/"]', (anchors) =>
     Array.from(new Set(anchors.map((a) => a.href)))
   );
 
-  console.log("Found jobs:", jobLinks.length);
+  // Convert relative -> absolute
+  const fullLinks = jobLinks.map((link) =>
+    link.startsWith("http") ? link : "https://ucsc.joinhandshake.com" + link
+  );
+
+  console.log("Found jobs:", fullLinks.length);
+  console.log(fullLinks);
 
   // ... here is where you'd loop over jobLinks and generate resumes
 }

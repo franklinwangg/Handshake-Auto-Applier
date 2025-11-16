@@ -2,25 +2,17 @@ import "dotenv/config";
 import { chromium } from "@playwright/test";
 import { spawn } from "child_process";
 import path from "path";
-import fs from "fs";
 import { fileURLToPath } from "url";
 
-// __dirname workaround for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const HANDSHAKE_JOBS_URL = process.env.HANDSHAKE_JOBS_URL;
-const PYTHON_EXECUTABLE = process.env.PYTHON_EXECUTABLE || "python";
+const PYTHON_EXECUTABLE = process.env.PYTHON_EXECUTABLE;
 const PYTHON_RESUME_SCRIPT = process.env.PYTHON_RESUME_SCRIPT;
-const RESUME_OUTPUT_DIR =
-  process.env.RESUME_OUTPUT_DIR || "../python-resume/generated";
+const RESUME_OUTPUT_DIR = process.env.RESUME_OUTPUT_DIR;
 
-if (!HANDSHAKE_JOBS_URL || !PYTHON_RESUME_SCRIPT) {
-  console.error("Missing HANDSHAKE_JOBS_URL or PYTHON_RESUME_SCRIPT in .env");
-  process.exit(1);
-}
-
-function sleep(ms) {
+async function sleep(ms) {
   return new Promise((res) => setTimeout(res, ms));
 }
 
@@ -28,11 +20,11 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// ----- Python -> Resume generator -----
 async function generateTailoredResume(jobDescription, jobTitle, companyName) {
-  const safeTitle = jobTitle.replace(/[^a-z0-9]/gi, "_");
-  const safeCompany = companyName.replace(/[^a-z0-9]/gi, "_");
-  const filename = `${safeTitle}_${safeCompany}_${Date.now()}.docx`;
+  const filename = `${jobTitle.replace(
+    /[^a-z0-9]/gi,
+    "_"
+  )}_${companyName.replace(/[^a-z0-9]/gi, "_")}_${Date.now()}.docx`;
 
   const outputPath = path.resolve(__dirname, RESUME_OUTPUT_DIR, filename);
 
@@ -53,20 +45,12 @@ async function generateTailoredResume(jobDescription, jobTitle, companyName) {
     child.stdin.end();
 
     let stdout = "";
+    child.stdout.on("data", (chunk) => (stdout += chunk.toString()));
 
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-
-    child.on("close", (code) => {
-      if (code !== 0) {
-        return reject(new Error("Python script exited with code " + code));
-      }
-
+    child.on("close", () => {
       try {
-        const data = JSON.parse(stdout);
-        if (data.error) return reject(new Error(data.error));
-        resolve(data.docxPath);
+        const parsed = JSON.parse(stdout);
+        resolve(parsed.docxPath);
       } catch (err) {
         reject(err);
       }
@@ -74,108 +58,156 @@ async function generateTailoredResume(jobDescription, jobTitle, companyName) {
   });
 }
 
+// async function main() {
+//   console.log("Opening Handshake...");
+
+//   // USE STORAGE STATE IF IT EXISTS
+//   const statePath = path.resolve(__dirname, "handshake_state.json");
+//   const fs = await import("fs");
+
+//   const context = await chromium.launchPersistentContext(
+//     __dirname + "/chrome-data",
+//     {
+//       headless: false,
+//     }
+//   );
+
+//   const page = await context.newPage();
+
+//   // FIRST NAVIGATION — you'll probably hit login
+//   await page.goto(HANDSHAKE_JOBS_URL).catch(() => {});
+
+//   // Wait a bit
+//   await sleep(2000);
+
+//   // CHECK IF YOU ARE ON LOGIN PAGE
+//   const url = page.url();
+//   if (
+//     url.includes("login") ||
+//     url.includes("sso") ||
+//     url.includes("shibboleth")
+//   ) {
+//     console.log("⚠️  You need to log in manually inside this window.");
+//     console.log("   After logging in, DO NOT CLOSE THE WINDOW.");
+//     console.log("   Just wait until you land on your job search page.");
+
+// await page.waitForURL(
+//   (u) => {
+//     const url = u.toString();
+//     return !(
+//       url.includes("login") ||
+//       url.includes("sso") ||
+//       url.includes("shibboleth") ||
+//       url.includes("duosecurity") ||
+//       url.includes("saml")
+//     );
+//   },
+//   { timeout: 0 }
+// );
+
+//     console.log("✅ Logged in!");
+//   }
+
+//   // Save session
+//   await context.storageState({ path: "handshake_state.json" });
+
+//   console.log("🔁 Reloading jobs page...");
+//   await page.goto(HANDSHAKE_JOBS_URL, { waitUntil: "networkidle" });
+
+//   console.log("✨ Logged in and ready — scraping jobs...");
+
+//   // Now scrape job links safely
+//   const jobLinks = await page.$$eval('a[href*="/stu/jobs/"]', (anchors) =>
+//     Array.from(new Set(anchors.map((a) => a.href)))
+//   );
+
+//   console.log("Found jobs:", jobLinks.length);
+
+//   // (rest of your automation goes here…)
+// }
+
 async function main() {
-  const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext();
+  console.log("Opening Handshake...");
+
+  // Persistent profile: remembers cookies between runs via chrome-data
+  const context = await chromium.launchPersistentContext(
+    path.join(__dirname, "chrome-data"),
+    {
+      headless: false,
+    }
+  );
+
   const page = await context.newPage();
 
-  console.log("Opening Handshake...");
-  await page.goto(HANDSHAKE_JOBS_URL, { waitUntil: "networkidle" });
+  // 1️⃣ Go to the jobs page once
+  await page.goto(HANDSHAKE_JOBS_URL);
 
-  // Scroll to load jobs
-  for (let i = 0; i < 5; i++) {
-    await page.mouse.wheel(0, 2000);
-    await sleep(randomInt(800, 1500));
+  // Small pause just so you can see what's happening
+  await sleep(1000);
+
+  const currentUrl = page.url();
+  console.log("Current URL:", currentUrl);
+
+  // Helper: what counts as a "login-ish" URL
+  const isLoginUrl = (url) => {
+    const u = url.toLowerCase();
+    return (
+      u.includes("login") ||
+      u.includes("sso") ||
+      u.includes("shibboleth") ||
+      u.includes("duosecurity") ||
+      u.includes("saml")
+    );
+  };
+
+  // Helper: what counts as a "job page" URL (i.e., you're actually in Handshake)
+  const isJobPageUrl = (url) => {
+    const u = url.toLowerCase();
+    return (
+      u.includes("joinhandshake.com") &&
+      (u.includes("/job-search") || u.includes("/stu/jobs"))
+    );
+  };
+
+  // 2️⃣ If we're on a login-related page, wait for you to finish auth
+  if (isLoginUrl(currentUrl)) {
+    console.log("⚠️  You need to log in manually in this window.");
+    console.log("   Use UCSC SSO + Duo. Don’t close the browser.");
+    console.log(
+      "   Once you land on your Handshake job search page, the script will continue."
+    );
+
+    // Wait until you're actually on a Handshake jobs page
+    await page.waitForURL(
+      (u) => {
+        const url = u.toString();
+        return isJobPageUrl(url);
+      },
+      { timeout: 0 } // wait as long as needed
+    );
+
+    console.log("✅ Detected Handshake jobs page after login.");
+  } else {
+    console.log("✅ Already on a jobs page, no login needed.");
   }
 
-  // Collect job links
-  const links = await page.$$eval('a[href*="/stu/jobs/"]', (anchors) =>
+  // Make sure the page is fully loaded
+  await page.waitForLoadState("networkidle");
+
+  console.log("✨ Logged in — waiting for jobs to load...");
+
+  // Handshake loads jobs via JS; wait for at least one job link
+  await page.waitForSelector('a[href*="/stu/jobs/"]', { timeout: 15000 });
+
+  console.log("✨ Jobs loaded — scraping...");
+
+  const jobLinks = await page.$$eval('a[href*="/stu/jobs/"]', (anchors) =>
     Array.from(new Set(anchors.map((a) => a.href)))
   );
 
-  console.log("Found jobs:", links.length);
+  console.log("Found jobs:", jobLinks.length);
 
-  for (const link of links) {
-    console.log("\n=== Opening job:", link);
-    const jobPage = await context.newPage();
-    await jobPage.goto(link, { waitUntil: "networkidle" });
-
-    await jobPage.mouse.move(200, 200, { steps: 10 });
-    await sleep(randomInt(800, 1500));
-    await jobPage.mouse.wheel(0, 1200);
-
-    // Extract data
-    const jobTitle =
-      (await jobPage.textContent("h1"))?.trim() || "Software Engineer";
-    const companyName =
-      (await jobPage.textContent('a[href*="/stu/employers/"]'))?.trim() ||
-      "Company";
-
-    const jobDescription =
-      (await jobPage.textContent('[data-testid="job-description"]')) ||
-      (await jobPage.textContent("main")) ||
-      "";
-
-    if (!jobDescription) {
-      console.log("No job description found, skipping.");
-      await jobPage.close();
-      continue;
-    }
-
-    console.log(`Job: ${jobTitle} @ ${companyName}`);
-
-    // Click Apply
-    const applyButton = await jobPage.$('button:has-text("Apply")');
-    if (!applyButton) {
-      console.log("No Apply button. Skipping.");
-      await jobPage.close();
-      continue;
-    }
-
-    await applyButton.click();
-    await sleep(randomInt(1500, 3000));
-
-    const resumeInput = await jobPage.$('input[type="file"]');
-    if (!resumeInput) {
-      console.log("No resume field found. Skipping.");
-      await jobPage.close();
-      continue;
-    }
-
-    console.log("Generating tailored resume...");
-
-    let resumePath;
-    try {
-      resumePath = await generateTailoredResume(
-        jobDescription,
-        jobTitle,
-        companyName
-      );
-    } catch (err) {
-      console.error("Resume generation failed:", err);
-      await jobPage.close();
-      continue;
-    }
-
-    console.log("Uploading:", resumePath);
-
-    try {
-      await resumeInput.setInputFiles(resumePath);
-    } catch (err) {
-      console.error("Failed to attach resume:", err);
-    }
-
-    console.log("⚠ Waiting for you to manually click Submit...");
-    await sleep(randomInt(15000, 30000)); // 15-30 seconds
-
-    await jobPage.close();
-  }
-
-  console.log("Done.");
-  await browser.close();
+  // ... here is where you'd loop over jobLinks and generate resumes
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main();

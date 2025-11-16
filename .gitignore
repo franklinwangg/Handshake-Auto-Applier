@@ -7,6 +7,7 @@ node-automation/handshake_state.json
 node-automation/playwright-report/
 node-automation/test-results/
 node-automation/*.log
+node-automation/chrome-data/
 
 # ------------------------------
 # Python Resume Generator

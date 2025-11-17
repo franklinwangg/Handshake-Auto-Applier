@@ -3,6 +3,7 @@ import { chromium } from "@playwright/test";
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
+import fetch from "node-fetch";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,15 +26,9 @@ async function generateTailoredResume(jobDescription, jobTitle, companyName) {
     /[^a-z0-9]/gi,
     "_"
   )}_${companyName.replace(/[^a-z0-9]/gi, "_")}_${Date.now()}.docx`;
-
   const outputPath = path.resolve(__dirname, RESUME_OUTPUT_DIR, filename);
 
-  const payload = {
-    jobDescription,
-    jobTitle,
-    companyName,
-    outputPath,
-  };
+  const payload = { jobDescription, jobTitle, companyName, outputPath };
 
   return new Promise((resolve, reject) => {
     const child = spawn(PYTHON_EXECUTABLE, [PYTHON_RESUME_SCRIPT], {
@@ -58,165 +53,131 @@ async function generateTailoredResume(jobDescription, jobTitle, companyName) {
   });
 }
 
-// async function main() {
-//   console.log("Opening Handshake...");
+// --------------- GraphQL fetch ----------------
+async function fetchJobsGraphQL(cookie, first = 25, after = null) {
+  const GRAPHQL_URL = "https://ucsc.joinhandshake.com/hs/graphql";
 
-//   // USE STORAGE STATE IF IT EXISTS
-//   const statePath = path.resolve(__dirname, "handshake_state.json");
-//   const fs = await import("fs");
+  const query = `
+    query JobSearchQuery($first: Int, $after: String, $input: JobSearchInput) {
+      jobSearch(first: $first, after: $after, input: $input) {
+        totalCount
+        edges {
+          node {
+            job {
+              id
+              title
+              description
+              employer { name }
+              remote
+              onSite
+              hybrid
+              locations { city state country }
+              salaryRange { min max currency paySchedule { friendlyName } }
+            }
+          }
+        }
+        pageInfo { hasNextPage endCursor }
+      }
+    }
+  `;
 
-//   const context = await chromium.launchPersistentContext(
-//     __dirname + "/chrome-data",
-//     {
-//       headless: false,
-//     }
-//   );
+  const variables = {
+    first,
+    after,
+    input: { filter: {}, sort: { direction: "ASC", field: "RELEVANCE" } },
+  };
 
-//   const page = await context.newPage();
+  const headers = {
+    "Content-Type": "application/json",
+    Cookie: cookie,
+  };
 
-//   // FIRST NAVIGATION — you'll probably hit login
-//   await page.goto(HANDSHAKE_JOBS_URL).catch(() => {});
+  const res = await fetch(GRAPHQL_URL, {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify({ query, variables }),
+  });
 
-//   // Wait a bit
-//   await sleep(2000);
+  const text = await res.clone().text(); // clone to read body separately
+  const json = await res.json();
 
-//   // CHECK IF YOU ARE ON LOGIN PAGE
-//   const url = page.url();
-//   if (
-//     url.includes("login") ||
-//     url.includes("sso") ||
-//     url.includes("shibboleth")
-//   ) {
-//     console.log("⚠️  You need to log in manually inside this window.");
-//     console.log("   After logging in, DO NOT CLOSE THE WINDOW.");
-//     console.log("   Just wait until you land on your job search page.");
+  // const text = await res.text();
+  console.log("Response status:", res.status);
+  console.log("Response text snippet:", text.slice(0, 500)); // just the first 500 chars
 
-// await page.waitForURL(
-//   (u) => {
-//     const url = u.toString();
-//     return !(
-//       url.includes("login") ||
-//       url.includes("sso") ||
-//       url.includes("shibboleth") ||
-//       url.includes("duosecurity") ||
-//       url.includes("saml")
-//     );
-//   },
-//   { timeout: 0 }
-// );
-
-//     console.log("✅ Logged in!");
-//   }
-
-//   // Save session
-//   await context.storageState({ path: "handshake_state.json" });
-
-//   console.log("🔁 Reloading jobs page...");
-//   await page.goto(HANDSHAKE_JOBS_URL, { waitUntil: "networkidle" });
-
-//   console.log("✨ Logged in and ready — scraping jobs...");
-
-//   // Now scrape job links safely
-//   const jobLinks = await page.$$eval('a[href*="/stu/jobs/"]', (anchors) =>
-//     Array.from(new Set(anchors.map((a) => a.href)))
-//   );
-
-//   console.log("Found jobs:", jobLinks.length);
-
-//   // (rest of your automation goes here…)
-// }
+  const data = await res.json();
+  return data.data.jobSearch;
+}
 
 async function main() {
   console.log("Opening Handshake...");
 
-  // Persistent profile: remembers cookies between runs via chrome-data
   const context = await chromium.launchPersistentContext(
     path.join(__dirname, "chrome-data"),
-    {
-      headless: false,
-    }
+    { headless: false }
   );
 
   const page = await context.newPage();
+  page.on("console", (msg) => {
+    console.log("BROWSER LOG:", msg.text());
+  });
 
-  // 1️⃣ Go to the jobs page once
   await page.goto(HANDSHAKE_JOBS_URL);
-
-  // Small pause just so you can see what's happening
   await sleep(1000);
 
   const currentUrl = page.url();
-  console.log("Current URL:", currentUrl);
+  const isLoginUrl = (url) =>
+    /login|sso|shibboleth|duosecurity|saml/i.test(url);
+  const isJobPageUrl = (url) =>
+    url.includes("joinhandshake.com") &&
+    (url.includes("/job-search") || url.includes("/stu/jobs"));
 
-  // Helper: what counts as a "login-ish" URL
-  const isLoginUrl = (url) => {
-    const u = url.toLowerCase();
-    return (
-      u.includes("login") ||
-      u.includes("sso") ||
-      u.includes("shibboleth") ||
-      u.includes("duosecurity") ||
-      u.includes("saml")
-    );
-  };
-
-  // Helper: what counts as a "job page" URL (i.e., you're actually in Handshake)
-  const isJobPageUrl = (url) => {
-    const u = url.toLowerCase();
-    return (
-      u.includes("joinhandshake.com") &&
-      (u.includes("/job-search") || u.includes("/stu/jobs"))
-    );
-  };
-
-  // 2️⃣ If we're on a login-related page, wait for you to finish auth
   if (isLoginUrl(currentUrl)) {
-    console.log("⚠️  You need to log in manually in this window.");
-    console.log("   Use UCSC SSO + Duo. Don’t close the browser.");
-    console.log(
-      "   Once you land on your Handshake job search page, the script will continue."
-    );
-
-    // Wait until you're actually on a Handshake jobs page
-    await page.waitForURL(
-      (u) => {
-        const url = u.toString();
-        return isJobPageUrl(url);
-      },
-      { timeout: 0 } // wait as long as needed
-    );
-
+    console.log("⚠️ Please log in manually in this window.");
+    await page.waitForURL((u) => isJobPageUrl(u.toString()), { timeout: 0 });
     console.log("✅ Detected Handshake jobs page after login.");
   } else {
-    console.log("✅ Already on a jobs page, no login needed.");
+    console.log("✅ Already on jobs page, no login needed.");
   }
 
-  // Make sure the page is fully loaded
-  await page.waitForLoadState("networkidle");
+  await page.addInitScript(() => {
+    const originalFetch = window.fetch;
 
-  console.log("✨ Logged in — waiting for jobs to load...");
+    window.fetch = async function (...args) {
+      const response = await originalFetch.apply(this, args);
 
-  // await page.waitForTimeout(3000);
-  // await page.pause();
+      try {
+        const cloned = response.clone();
+        const json = await cloned.json();
 
-  // Wait for job cards to appear
-  await page.waitForSelector('a[href*="/job-search/"]', { timeout: 15000 });
+        if (json?.data?.jobSearch) {
+          console.log("🔥 Intercepted Job Search Results:");
+          console.log(json.data.jobSearch);
 
-  console.log("✨ Jobs loaded — scraping...");
+          const jobs = json.data.jobSearch.edges.map((e) => ({
+            title: e.node.job.title,
+            company: e.node.job.employer.name,
+            description: e.node.job.description,
+            id: e.node.job.id,
+          }));
 
-  const jobLinks = await page.$$eval('a[href*="/job-search/"]', (anchors) =>
-    Array.from(new Set(anchors.map((a) => a.href)))
-  );
+          // Print all jobs as a JSON string for full visibility
+          console.log("Parsed jobs:", JSON.stringify(jobs, null, 2));
 
-  // Convert relative -> absolute
-  const fullLinks = jobLinks.map((link) =>
-    link.startsWith("http") ? link : "https://ucsc.joinhandshake.com" + link
-  );
+          // Or print each job individually
+          // jobs.forEach(job => console.log(job));
 
-  console.log("Found jobs:", fullLinks.length);
-  console.log(fullLinks);
+          window.latestJobs = jobs;
+        }
+      } catch (err) {
+        console.error("Error parsing fetch response:", err);
+      }
 
-  // ... here is where you'd loop over jobLinks and generate resumes
+      return response;
+    };
+  });
+
+  await page.goto(HANDSHAKE_JOBS_URL);
 }
 
 main();

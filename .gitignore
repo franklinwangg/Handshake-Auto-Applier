@@ -8,6 +8,7 @@ node-automation/playwright-report/
 node-automation/test-results/
 node-automation/*.log
 node-automation/chrome-data/
+node-automation/temp.txt
 
 # ------------------------------
 # Python Resume Generator

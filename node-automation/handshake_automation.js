@@ -1,4 +1,5 @@
 import fs from "fs";
+import zlib from "zlib";
 
 import "dotenv/config";
 import { chromium } from "@playwright/test";
@@ -63,18 +64,63 @@ BODY: ${postData}
   } catch (err) {}
 });
 
-// Log every response
+// page.on("response", async (response) => {
+//   try {
+//     const url = response.url();
+
+//     // Always read raw body
+//     const buffer = await response.body();
+
+//     // Try to decode as utf-8 text
+//     let bodyText;
+//     try {
+//       bodyText = buffer.toString("utf8");
+//     } catch {
+//       bodyText = "<binary>";
+//     }
+
+//     const log = `
+// ===== RESPONSE =====
+// URL: ${url}
+// BODY: ${bodyText}
+// ====================
+// `;
+
+//     fs.appendFileSync("temp.txt", log);
+//   } catch (err) {}
+// });
 page.on("response", async (response) => {
   try {
     const url = response.url();
-    const body = await response.text();
+    const headers = response.headers();
+    const encoding = headers["content-encoding"] || "";
+
+    const buffer = await response.body(); // always raw bytes
+
+    let decompressed;
+
+    if (encoding.includes("br")) {
+      // Brotli
+      decompressed = zlib.brotliDecompressSync(buffer);
+    } else if (encoding.includes("gzip")) {
+      decompressed = zlib.gunzipSync(buffer);
+    } else if (encoding.includes("deflate")) {
+      decompressed = zlib.inflateSync(buffer);
+    } else {
+      decompressed = buffer; // plain text
+    }
+
+    let bodyText = decompressed.toString("utf8");
 
     const log = `
 ===== RESPONSE =====
 URL: ${url}
-BODY: ${body}
-====================`;
+BODY: ${bodyText}
+====================
+`;
 
-    fs.appendFileSync("temp.txt", log + "\n");
-  } catch (err) {}
+    fs.appendFileSync("temp.txt", log);
+  } catch (err) {
+    console.error("Error reading response:", err);
+  }
 });

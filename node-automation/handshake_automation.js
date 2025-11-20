@@ -29,6 +29,26 @@ page.on("console", (msg) => {
   console.log("BROWSER LOG:", msg.text());
 });
 
+// 1️⃣ Patch fetch in the browser
+await page.addInitScript(() => {
+  const origFetch = window.fetch;
+  window.__GRAPHQL_RESPONSES__ = [];
+
+  window.fetch = async (...args) => {
+    const res = await origFetch(...args);
+    const clone = res.clone();
+
+    clone
+      .json()
+      .then((data) => {
+        window.__GRAPHQL_RESPONSES__.push(JSON.stringify(data));
+      })
+      .catch(() => {});
+
+    return res;
+  };
+});
+
 await page.goto(HANDSHAKE_JOBS_URL);
 await sleep(1000);
 
@@ -46,81 +66,20 @@ if (isLoginUrl(currentUrl)) {
   console.log("✅ Already on jobs page, no login needed.");
 }
 
-// Log every request
-page.on("request", async (request) => {
-  try {
-    const url = request.url();
-    const method = request.method();
-    const postData = request.postData() || "";
+// 2️⃣ Let the page make requests (user logs in, page loads jobs, etc.)
+// ...
 
-    const log = `
-===== REQUEST =====
-URL: ${url}
-METHOD: ${method}
-BODY: ${postData}
-===================`;
+await page.waitForTimeout(5000); // wait 5 seconds
 
-    fs.appendFileSync("temp.txt", log + "\n");
-  } catch (err) {}
+// 3️⃣ Pull the intercepted responses from the browser
+const responses = await page.evaluate(() => {
+  console.log(
+    "Init script running, window.__GRAPHQL_RESPONSES__ =",
+    window.__GRAPHQL_RESPONSES__
+  );
+
+  return window.__GRAPHQL_RESPONSES__;
 });
 
-// page.on("response", async (response) => {
-//   try {
-//     const url = response.url();
-
-//     // Always read raw body
-//     const buffer = await response.body();
-
-//     // Try to decode as utf-8 text
-//     let bodyText;
-//     try {
-//       bodyText = buffer.toString("utf8");
-//     } catch {
-//       bodyText = "<binary>";
-//     }
-
-//     const log = `
-// ===== RESPONSE =====
-// URL: ${url}
-// BODY: ${bodyText}
-// ====================
-// `;
-
-//     fs.appendFileSync("temp.txt", log);
-//   } catch (err) {}
-// });
-page.on("response", async (response) => {
-  try {
-    const url = response.url();
-    const headers = response.headers();
-    const encoding = headers["content-encoding"] || "";
-
-    const buffer = await response.body(); // always raw bytes
-
-    let decompressed;
-
-    if (encoding.includes("br")) {
-      // Brotli
-      decompressed = zlib.brotliDecompressSync(buffer);
-    } else if (encoding.includes("gzip")) {
-      decompressed = zlib.gunzipSync(buffer);
-    } else if (encoding.includes("deflate")) {
-      decompressed = zlib.inflateSync(buffer);
-    } else {
-      decompressed = buffer; // plain text
-    }
-
-    let bodyText = decompressed.toString("utf8");
-
-    const log = `
-===== RESPONSE =====
-URL: ${url}
-BODY: ${bodyText}
-====================
-`;
-
-    fs.appendFileSync("temp.txt", log);
-  } catch (err) {
-    console.error("Error reading response:", err);
-  }
-});
+// 4️⃣ Write them to temp.txt
+fs.writeFileSync("temp.txt", JSON.stringify(responses, null, 2));

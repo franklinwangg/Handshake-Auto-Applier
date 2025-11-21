@@ -1,0 +1,94 @@
+{
+    "data": {
+        "job": {
+            "id": "10509864",
+            "__typename": "Job",
+            "follow": null,
+            "isUpgraded": false,
+            "employer": {
+                "id": "487227",
+                "__typename": "Employer",
+                "name": "Infrrd, Inc",
+                "follow": null,
+                "hasEnabledJobApplyTracking": false,
+                "institutionSize": {
+                    "id": "5",
+                    "name": "250 - 1,000",
+                    "__typename": "InstitutionSize"
+                },
+                "location": {
+                    "id": "36724665",
+                    "city": "",
+                    "state": "",
+                    "country": "",
+                    "name": "2001 Gateway Place, Suite 301E, San jose, CA 95110",
+                    "__typename": "Location"
+                },
+                "schoolCurations": [],
+                "description": "We are Infrrd - the Enterprise AI company that uses AI and Machine Learning technologies to help our customers automate human tasks.\r\n\r\n1. We are a team of about 300 people, so while we are young - we are not a start-up.\r\n \r\n2. There are three levels of people in our team - those who do the work, those who can fix things when they are not working and the ones that can own outcomes. This job belongs in the first category – which includes designing, testing, problem solving and developing awesome code with high accuracy. You will be responsible to combine analysis and curiosity to understand how things work and what can be done to make them work better.\r\n \r\n3. Our team is spread in 3 parts of the globe - US, Europe and India. You will need to be comfortable working with remote colleagues.\r\n \r\n4. We have 4 simple values that we run our company with – \r\n1. Captain must go down with the ship, \r\n2. Do the right thing, \r\n3. Don’t sweat the small stuff and \r\n4. Have Fun.  You can read more about this here-\r\nhttps://www.linkedin.com/pulse/20140806224929-3262066-17-words-of-wisdom-for-startup-ceos/",
+                "logo": {
+                    "url": "https://joinhandshake-production.imgix.net/app/public/assets/institutions/487227/original/hs-emp-logo-data.?ixlib=rb-4.1.1\u0026w=150\u0026h=150\u0026fit=crop\u0026s=9c7d2434505ebd796cbd9fc0e749653e",
+                    "__typename": "Image"
+                },
+                "industry": {
+                    "id": "1034",
+                    "name": "Internet \u0026 Software",
+                    "__typename": "Industry"
+                }
+            },
+            "applyStart": "2025-11-17T11:58:45-08:00",
+            "jobApplySetting": {
+                "id": "10442320",
+                "applyType": "EXTERNAL",
+                "externalApplyType": "URL",
+                "additionalInstructions": "",
+                "externalUrl": "https://infrrd.bamboohr.com/careers/192?source=aWQ9NzI%3D",
+                "alternativeExternalUrl": null,
+                "__typename": "JobApplySetting"
+            },
+            "screeningQuestions": [],
+            "atsIntegrated": false,
+            "expirationDate": "2025-12-17T21:59:59-08:00",
+            "requiredDocumentTypes": [],
+            "title": "Python Intern",
+            "atsProvider": null,
+            "attachments": [],
+            "otherDocumentNotes": null,
+            "atsDetail": null,
+            "studentScreen": {
+                "id": "14211250",
+                "workAuthorizationCountries": [],
+                "__typename": "StudentScreen"
+            },
+            "relationshipOpportunities": [],
+            "jobContactableUsers": []
+        },
+        "studentEmployeeProfiles": [],
+        "documentTypes": [
+            {
+                "id": "1",
+                "behaviorIdentifier": "RESUME",
+                "name": "Resume",
+                "__typename": "DocumentTypeEnum"
+            },
+            {
+                "id": "2",
+                "behaviorIdentifier": "COVER_LETTER",
+                "name": "Cover Letter",
+                "__typename": "DocumentTypeEnum"
+            },
+            {
+                "id": "3",
+                "behaviorIdentifier": "TRANSCRIPT",
+                "name": "Transcript",
+                "__typename": "DocumentTypeEnum"
+            },
+            {
+                "id": "5",
+                "behaviorIdentifier": "OTHER_DOCUMENT",
+                "name": "Other Document",
+                "__typename": "DocumentTypeEnum"
+            }
+        ]
+    }
+}

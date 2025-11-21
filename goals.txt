@@ -1,2 +1,15 @@
-jobSearchQuery - tells you when the job starts and ends
-GetExtendedJobDetails - tells you 1) requiredDocuemntTypes, 2) applyType (internal or external)
+1) get a list of all the job id's
+1.1) figure out how to detect the jobSearchResults
+
+- how come after i parse the temp-pretty.txt into json, i get all these weird values for cookies and stuff and lose the actual data?
+
+-     "data": {
+      "jobSearch": {
+        "totalCount": 76330,
+        "searchId": "79e471ac-4129-43f9-92ef-77989becb17d",
+        "edges": [
+          {
+
+1.2) figure out how to detect the GetExtendedJobDetails
+2) for each job id, look through the list until i find the matching "getjobsforstudents" response that contains requiredDocumentTypes
+3) print each out

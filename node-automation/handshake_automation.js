@@ -71,6 +71,24 @@ if (isLoginUrl(currentUrl)) {
 
 await page.waitForTimeout(5000); // wait 5 seconds
 
+await page.evaluate(() => {
+  const finishBtn = document.createElement("button");
+  finishBtn.textContent = "I'm Done";
+  finishBtn.style.position = "fixed";
+  finishBtn.style.bottom = "20px";
+  finishBtn.style.right = "20px";
+  finishBtn.style.zIndex = 10000;
+  finishBtn.style.padding = "10px";
+  finishBtn.style.background = "green";
+  finishBtn.style.color = "white";
+  document.body.appendChild(finishBtn);
+
+  finishBtn.addEventListener("click", () => {
+    console.log("Done clicking! Proceed to parse data.");
+    window.__DONE_CLICKING__ = true;
+  });
+});
+
 // 3️⃣ Pull the intercepted responses from the browser
 const responses = await page.evaluate(() => {
   console.log(
@@ -81,30 +99,26 @@ const responses = await page.evaluate(() => {
   return window.__GRAPHQL_RESPONSES__;
 });
 
-// Step 1: Write JSON literals to temp.txt
-fs.writeFileSync("temp.txt", JSON.stringify(responses, null, 2));
+// // Step 1: Write JSON literals to temp.txt
+// fs.writeFileSync("temp.txt", JSON.stringify(responses, null, 2));
 
-console.log("Saved scraped data to temp.txt");
+// console.log("Saved scraped data to temp.txt");
 
-// Step 2: Read temp.txt and parse it
-let text = fs.readFileSync("temp.txt", "utf-8");
+// // Step 2: Read temp.txt and parse it
+// let text = fs.readFileSync("temp.txt", "utf-8");
 
-// If your scraped data was double-escaped strings, use:
-// let data = JSON.parse(JSON.parse(text));
-let data = JSON.parse(text); // regular JSON parse
+// // If your scraped data was double-escaped strings, use:
+// // let data = JSON.parse(JSON.parse(text));
+// let data = JSON.parse(text); // regular JSON parse
 
-if (data?.data?.jobSearch?.edges) {
-  for (const edge of data.data.jobSearch.edges) {
-    const job = edge.node.job;
-    console.log(job.id, job.title, job.employer.name);
-  }
-} else {
-  console.log(
-    "No jobSearch edges found. Current top-level keys:",
-    Object.keys(data.data)
-  );
-}
-
-// Step 3: Write parsed JSON to temp-json.txt
-fs.writeFileSync("temp-json.txt", JSON.stringify(data, null, 2), "utf-8");
-console.log("Saved parsed data to temp-json.txt");
+// if (data?.data?.jobSearch?.edges) {
+//   for (const edge of data.data.jobSearch.edges) {
+//     const job = edge.node.job;
+//     console.log(job.id, job.title, job.employer.name);
+//   }
+// } else {
+//   console.log(
+//     "No jobSearch edges found. Current top-level keys:",
+//     Object.keys(data.data)
+//   );
+// }

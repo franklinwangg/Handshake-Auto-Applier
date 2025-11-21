@@ -1,0 +1,29 @@
+jobSearchQuery - tells you when the job starts and ends
+GetExtendedJobDetails - tells you 1) requiredDocuemntTypes, 2) applyType (internal or external)
+
+search for "requireddocumenttypes". also why is "spacenav" mentioned several times over in the document? what does each instance mean?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

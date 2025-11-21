@@ -1,0 +1,92 @@
+
+            "job": {
+        "id": "10506494",
+        "__typename": "Job",
+        "follow": null,
+        "isUpgraded": false,
+        "employer": {
+          "id": "243557",
+          "__typename": "Employer",
+          "name": "SpaceNav",
+          "follow": null,
+          "hasEnabledJobApplyTracking": false,
+          "institutionSize": {
+            "id": "2",
+            "name": "10 - 50",
+            "__typename": "InstitutionSize"
+          },
+          "location": {
+            "id": "12907460",
+            "city": "Boulder",
+            "state": "Colorado",
+            "country": "United States",
+            "name": "2601 Spruce Street, Boulder, Colorado 80302, United States",
+            "__typename": "Location"
+          },
+          "schoolCurations": [],
+          "description": "SpaceNav is a Colorado-based applied mathematics & aerospace engineering company. We deliver technical solutions in the areas of Space Situational Awareness, Systems Engineering, and Mission Operations. SpaceNav’s expertise is in the areas of modeling & simulation, orbit estimation, and optimization.  SpaceNav currently delivers products and services to both commercial and government customers.",
+          "logo": {
+            "url": "https://joinhandshake-production.imgix.net/app/public/assets/institutions/243557/original/hs-emp-logo-data.?ixlib=rb-4.1.1&w=150&h=150&fit=crop&s=b67a885879e376ac599cd57f0576b136",
+            "__typename": "Image"
+          },
+          "industry": {
+            "id": "1021",
+            "name": "Aerospace",
+            "__typename": "Industry"
+          }
+        },
+        "applyStart": "2025-11-14T16:19:38-08:00",
+        "jobApplySetting": {
+          "id": "10438950",
+          "applyType": "HANDSHAKE",
+          "externalApplyType": "URL",
+          "additionalInstructions": null,
+          "externalUrl": "",
+          "alternativeExternalUrl": null,
+          "__typename": "JobApplySetting"
+        },
+        "screeningQuestions": [],
+        "atsIntegrated": false,
+        "expirationDate": "2025-12-14T22:59:59-08:00",
+        "requiredDocumentTypes": [
+          {
+            "id": "1",
+            "__typename": "DocumentTypeEnum",
+            "name": "Resume",
+            "behaviorIdentifier": "RESUME"
+          }
+        ],
+        "title": "Software Development Engineer",
+        "atsProvider": null,
+        "attachments": [],
+        "otherDocumentNotes": null,
+        "atsDetail": null,
+        "studentScreen": {
+          "id": "14206603",
+          "workAuthorizationCountries": [],
+          "__typename": "StudentScreen"
+        },
+        "relationshipOpportunities": [],
+        "jobContactableUsers": [
+          {
+            "id": "1390130",
+            "user": {
+              "id": "72283006",
+              "__typename": "User",
+              "firstName": "Casey",
+              "lastName": "Kipple",
+              "userProfilePhotoUrl": "https://app.joinhandshake.com/user_profile_photos/72283006?size=profile",
+              "title": "HR Generalist",
+              "name": "Casey Kipple",
+              "calculatedFirstName": "Casey",
+              "userType": "EMPLOYERS",
+              "institution": {
+                "__typename": "Employer",
+                "id": "243557",
+                "name": "SpaceNav"
+              }
+            },
+            "__typename": "JobUserProfile"
+          }
+        ]
+      }

@@ -8,6 +8,45 @@ util.inspect.defaultOptions.depth = null;
 const filePath = "temp-pretty.txt"; // replace with your JSON or JSONL file
 
 // ---- HELPER FUNCTION ----
+function printDocumentTypes(requiredDocumentTypes) {
+  if (
+    !Array.isArray(requiredDocumentTypes) ||
+    requiredDocumentTypes.length === 0
+  ) {
+    console.log("Required Documents: None");
+    return;
+  }
+
+  console.log("Required Documents:");
+
+  requiredDocumentTypes.forEach((doc) => {
+    const name = doc?.name || "Unknown";
+    const behavior = doc?.behaviorIdentifier || "Unknown";
+    const id = doc?.id || "Unknown";
+
+    console.log(`  • ${name} (id: ${id}, behavior: ${behavior})`);
+  });
+}
+
+// function printDocumentTypes(jobId, requiredDocumentTypes) {
+//   console.log(`\nJob ID: ${jobId}`);
+
+//   if (!Array.isArray(requiredDocumentTypes) || requiredDocumentTypes.length === 0) {
+//     console.log("  Required Documents: None");
+//     return;
+//   }
+
+//   console.log("  Required Documents:");
+
+//   requiredDocumentTypes.forEach(doc => {
+//     const name = doc?.name || "Unknown";
+//     const behavior = doc?.behaviorIdentifier || "Unknown";
+//     const id = doc?.id || "Unknown";
+
+//     console.log(`    • ${name} (id: ${id}, behavior: ${behavior})`);
+//   });
+// }
+
 function printJobInfo(jobNode) {
   if (!jobNode?.job) return;
 
@@ -87,12 +126,41 @@ if (filePath.endsWith(".jsonl")) {
 
   log("parsed:", parsed);
 
-  parsed.forEach((obj) => {
-    const edges = obj?.data?.jobSearch?.edges || [];
-    edges.forEach((edge) => printJobInfo(edge.node));
-  });
+  // parsed.forEach((obj) => {
+  //   // ata => job => requiredDocumentTypes.
 
-  // const edges =
-  //   parsed?.data?.jobSearch?.edges || (Array.isArray(parsed) ? parsed : []);
-  // edges.forEach((edge) => printJobInfo(edge.node));
+  //   const data = obj?.data;
+
+  //   const jobSearchEdges = data.jobSearch?.edges;
+  //   const requiredDocumentTypes = data.job?.requiredDocumentTypes;
+
+  //   if(jobSearchEdges) {
+  //     printJobInfo(jobSearchEdges.node);
+  //   }
+  //   if(requiredDocumentTypes) {
+  //     printDocumentTypes(requiredDocumentTypes);
+  //   }
+  //   // const edges = obj?.data?.jobSearch?.edges || [];
+  //   // if(edges.length === 0) {
+
+  //   // }
+  //   // edges.forEach((edge) => printJobInfo(edge.node));
+
+  // });
+
+  parsed.forEach((obj) => {
+    const data = obj?.data;
+
+    // CASE 1: Job Search response
+    if (data?.jobSearch?.edges) {
+      data.jobSearch.edges.forEach((edge) => {
+        printJobInfo(edge.node); // node = job summary
+      });
+    }
+
+    // CASE 2: Job Detail response (requiredDocumentTypes lives here)
+    if (data?.job?.requiredDocumentTypes) {
+      printDocumentTypes(data.job.requiredDocumentTypes);
+    }
+  });
 }
